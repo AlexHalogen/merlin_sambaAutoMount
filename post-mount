@@ -1,0 +1,30 @@
+#!/bin/sh
+
+conf=/tmp/etc/smb.conf
+for pid in `ps -w | grep smbd | grep -v grep | awk '{print $1}'`
+do
+        kill $pid
+done
+
+for pid in `ps -w | grep nmbd | grep -v grep | awk '{print $1}'`
+do
+        kill $pid
+done
+
+cp /jffs/smb_base.conf $conf
+
+for d in /tmp/mnt/*; do
+disk="$(echo $d | sed -n 's/.*\///p')";
+echo "[$disk]
+path = $d
+dos filetimes = yes
+fake directory create times = yes
+valid users = admin
+read list = admin
+write list = admin" >> $conf;
+done
+cp $conf /jffs/configs/smb.conf
+smbd -D $conf
+nmbd -D $conf
+date >> /jffs/record.txt
+
