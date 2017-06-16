@@ -1,9 +1,7 @@
 #!/bin/sh
 conf=/tmp/etc/smb.conf
 usbpath=$1
-echo $usbpath>>/jffs/record.txt
 disk="$(echo $usbpath | sed -n 's/.*\///p')"
-echo $disk
 sed '/\['"$disk"'\]/,/write list/d' $conf > $conf.tmp
 for pid in `ps -w | grep smbd | grep -v grep | awk '{print $1}'`
 do
@@ -11,9 +9,8 @@ do
 done
 for pid in `ps -w | grep nmbd | grep -v grep | awk '{print $1}'`
 do
-        kill $pid
+	kill $pid
 done
 cp $conf.tmp $conf
 smbd -D $conf
 nmbd -D $conf
-date >> /jffs/record.txt

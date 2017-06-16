@@ -1,30 +1,69 @@
 #!/bin/sh
-
 conf=/tmp/etc/smb.conf
 for pid in `ps -w | grep smbd | grep -v grep | awk '{print $1}'`
 do
-        kill $pid
+	kill $pid
 done
-
 for pid in `ps -w | grep nmbd | grep -v grep | awk '{print $1}'`
 do
-        kill $pid
+	kill $pid
 done
+computer_name="$(nvram get computer_name)"
+ip="$(nvram get lan_ipaddr)"
 
-cp /jffs/smb_base.conf $conf
-
+echo '[global]
+workgroup = WORKGROUP
+netbios name = '$computer_name'
+server string = '$computer_name'
+unix charset = UTF8
+display charset = UTF8
+log file = /var/log.samba
+log level = 0
+max log size = 5
+security = USER
+guest ok = no
+map to guest = Bad User
+encrypt passwords = yes
+pam password change = no
+null passwords = yes
+max protocol = NT1
+passdb backend = smbpasswd
+smb encrypt = disabled
+smb passwd file = /etc/samba/smbpasswd
+enable core files = no
+deadtime = 30
+load printers = no
+min receivefile size = 16384
+force directory mode = 0777
+force create mode = 0777
+max connections = 5
+obey pam restrictions = no
+disable spoolss = yes
+host msdfs = no
+strict allocate = No
+bind interfaces only = yes
+interfaces = lo br0 '$ip'/255.255.255.0
+use sendfile = yes
+map archive = no
+map hidden = no
+map read only = no
+map system = no
+store dos attributes = yes
+dos filemode = yes
+oplocks = yes
+level2 oplocks = yes
+kernel oplocks = no
+wide links = no' > $conf
 for d in /tmp/mnt/*; do
-disk="$(echo $d | sed -n 's/.*\///p')";
-echo "[$disk]
-path = $d
-dos filetimes = yes
-fake directory create times = yes
-valid users = admin
-read list = admin
-write list = admin" >> $conf;
+	disk="$(echo $d | sed -n 's/.*\///p')";
+	echo "[$disk]
+	path = $d
+	dos filetimes = yes
+	fake directory create times = yes
+	valid users = admin
+	read list = admin
+	write list = admin" >> $conf;
 done
 cp $conf /jffs/configs/smb.conf
 smbd -D $conf
 nmbd -D $conf
-date >> /jffs/record.txt
-
